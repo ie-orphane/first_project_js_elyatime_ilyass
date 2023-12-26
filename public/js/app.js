@@ -1,6 +1,13 @@
 //^ classes
 class Bank {
     static users = []
+
+}
+
+function today() {
+    const now = new Date()
+    const formattedDate = `${now.getUTCFullYear()}-${(now.getUTCMonth() + 1)}-${now.getUTCDate()} ${now.getUTCHours()}:${now.getUTCMinutes()}`
+    return formattedDate
 }
 
 class User {
@@ -12,8 +19,8 @@ class User {
         this.balance = balance || Math.trunc(Math.random() * (100_000 - 1_000) + 1_000)
         this.loan
         this.invest
-        this.history
-        
+        this.history = [`${today()}   Signup`]
+
         Bank.users.push(this)
     }
 }
@@ -25,11 +32,7 @@ class Char {
     static numbers = '0123456789'
 }
 
-function today() {
-    const now = new Date()
-    const formattedDate = `${now.getUTCFullYear()}-${(now.getUTCMonth() + 1)}-${now.getUTCDate()} ${now.getUTCHours()}:${now.getUTCMinutes()}`
-    return formattedDate
-}
+
 
 const better_prompt = (message, defaultInput, option = 'default') => {
     let userInput = prompt(message, defaultInput)
@@ -223,83 +226,125 @@ function signup() {
 }
 
 function login() {
-    // # Email:
-    function get_user() {
-        const email = prompt('Enter your email.')
-        // search email in Bank
-        for (const user of Bank.users) {
-            if (email == user.email) {
-                return user
+    // // # Email:
+    // function get_user() {
+    //     const email = prompt('Enter your email.')
+    //     // search email in Bank
+    //     for (const user of Bank.users) {
+    //         if (email == user.email) {
+    //             return user
+    //         }
+    //     }
+    //     alert(`${email} not found!`)
+    //     return get_user()
+    // }
+
+    // // - Check if the email exists in our Database.
+    // const user = get_user()
+
+    // // # Password:
+    // // - Check if the entered password is associated with the previously entered email.
+    // function check_password() {
+    //     const password = prompt('Enter your password')
+    //     if (user.password != password) {
+    //         check_password()
+    //     }
+    // }
+
+    // check_password()
+
+    const user = Bank.users[0]
+
+    user.history.push(`${today()}   Login`)
+    console.table(user.history)
+
+    function service() {
+        // Withdraw Money
+        function withdraw() {
+            const userInput = prompt('Enter the amount to draw.')
+            const amount = Number(userInput)
+
+            if (!amount) {
+                alert(`invalid amount of money '${userInput}'`)
+                return withdraw()
             }
+
+            if (amount > user.balance) {
+                alert(`invalid amount of money '${amount}'\nYou have only ${user.balance}`)
+                return withdraw()
+            }
+
+            user.balance -= amount
+            return service()
         }
-        alert(`${email} not found!`)
-        return get_user()
-    }
 
-    // - Check if the email exists in our Database.
-    const user = get_user()
-    
-    // # Password:
-    // - Check if the entered password is associated with the previously entered email.
-    function check_password() {
-        const password = prompt('Enter your password')
-        if (user.password != password) {
-            check_password()
+        // Deposit Money
+        function deposit() {
+            const userInput = prompt('Enter the amount to draw.')
+            const amount = Number(userInput)
+
+            if (!amount) {
+                alert(`invalid amount of money '${userInput}'`)
+                return deposit()
+            }
+
+            if (amount > 1_000) {
+                alert(`you can only deposit `)
+                return deposit()
+            }
+
+            user.balance -= amount
+            return service()
         }
+
+        const userInput = prompt(`Current Balance: ${user.balance}\nwanna 'logout', 'withdraw', 'deposit', 'loan', 'invest' or 'history'`, 'withdraw')
+        switch (userInput) {
+            case 'logout':
+                user.history.push(`${today()}   Logout`)
+                return main()
+            case 'withdraw':
+                withdraw()
+                break
+            case 'deposit':
+
+                break
+            case 'loan':
+
+                break
+            case 'invest':
+
+                break
+            case 'history':
+
+                break
+
+            default:
+                alert(`invalid option '${userInput}'!`)
+                return service()
+        }
+
     }
 
-    check_password()
-
-    alert(`Current Balance: ${user.balance}`)
-
-    let userInput
-
-    // userInput = better_prompt("wanna 'signup', 'login' or 'reset password'", 'signup')
-    userInput = 'login'
-    switch (userInput) {
-        case 'logout':
-            main()
-            break
-        case 'withdrawmoney':
-
-            break
-        case 'depositmoney':
-
-            break
-        case 'takealoan':
-
-            break
-        case 'invest':
-
-            break
-        case 'history':
-
-            break
-
-        default:
-            alert(`The option '${userInput}' not found!`)
-            break
-    }
+    service()
 }
 
 function main() {
-    let userInput
+    let userInput = prompt("wanna 'signup', 'login' or 'reset password'")
 
-    // userInput = better_prompt("wanna 'signup', 'login' or 'reset password'", 'signup')
-    userInput = 'login'
     switch (userInput) {
         case 'login':
             login()
             break
         case 'signup':
-            // signup()
+            signup()
             break
         case 'resetpassword':
 
             break;
 
         default:
-            alert(`The option '${userInput}' not found!`)
+            alert(`invalid option '${userInput}'!`)
+            main()
             break;
     }
 }

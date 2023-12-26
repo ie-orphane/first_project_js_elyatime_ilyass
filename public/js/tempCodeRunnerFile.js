@@ -1,7 +1,4 @@
-function today() {
-    const now = new Date()
-    const formattedDate = `${now.getUTCFullYear()}-${(now.getUTCMonth() + 1)}-${now.getUTCDate()} ${now.getUTCHours()}:${now.getUTCMinutes()}`
-    return formattedDate
+number = Number('2h2')
+if (number) {
+    console.log(number)
 }
-
-today()
