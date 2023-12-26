@@ -1,13 +1,28 @@
 //^ classes
 class Bank {
     static users = []
-
 }
 
 function today() {
     const now = new Date()
     const formattedDate = `${now.getUTCFullYear()}-${(now.getUTCMonth() + 1)}-${now.getUTCDate()} ${now.getUTCHours()}:${now.getUTCMinutes()}`
     return formattedDate
+}
+
+class Investment {
+    constructor(user, amount) {
+        this.amount = amount
+        this.profit = 0
+        user.invests.push(this)
+    }
+}
+
+class Loan {
+    constructor(user, amount) {
+        this.amount = amount
+        this.pay = 0
+        user.loans.push(this)
+    }
 }
 
 class User {
@@ -17,8 +32,8 @@ class User {
         this.age = age
         this.password = password
         this.balance = balance || Math.trunc(Math.random() * (100_000 - 1_000) + 1_000)
-        this.loan
-        this.invest
+        this.loans = []
+        this.invests = []
         this.history = [`${today()}   Signup`]
 
         Bank.users.push(this)
@@ -123,7 +138,12 @@ function signup() {
             return get_email()
         }
 
-        //TODO - Ensure the email is unique.
+        for (const user of Bank.users) {
+            if (user.email == email) {
+                alert(`already registred with the email '${email}'`)
+                return get_email()
+            }
+        }
 
         return email
     }
@@ -207,7 +227,6 @@ function signup() {
     // Email
     const userEmail = get_email()
     // Age
-    console.log('function')
     const userAge = get_age()
     // Password
     const userPassword = get_password()
@@ -223,45 +242,80 @@ function signup() {
     }
 
     new User(userFullName, userEmail, userAge, userPassword)
+    console.table(Bank.users)
 }
 
 function login() {
-    // // # Email:
-    // function get_user() {
-    //     const email = prompt('Enter your email.')
-    //     // search email in Bank
-    //     for (const user of Bank.users) {
-    //         if (email == user.email) {
-    //             return user
-    //         }
-    //     }
-    //     alert(`${email} not found!`)
-    //     return get_user()
-    // }
+    // # Email:
+    function get_user() {
+        const email = prompt('Enter your email.')
+        // search email in Bank
+        for (const user of Bank.users) {
+            if (email == user.email) {
+                return user
+            }
+        }
+        alert(`${email} not found!`)
+        return get_user()
+    }
 
-    // // - Check if the email exists in our Database.
-    // const user = get_user()
+    // - Check if the email exists in our Database.
+    const user = get_user()
 
-    // // # Password:
-    // // - Check if the entered password is associated with the previously entered email.
-    // function check_password() {
-    //     const password = prompt('Enter your password')
-    //     if (user.password != password) {
-    //         check_password()
-    //     }
-    // }
+    // # Password:
+    // - Check if the entered password is associated with the previously entered email.
+    function check_password() {
+        const password = prompt('Enter your password')
+        if (user.password != password) {
+            check_password()
+        }
+    }
 
-    // check_password()
+    check_password()
 
-    const user = Bank.users[0]
+    // const user = Bank.users[0]
 
     user.history.push(`${today()}   Login`)
     console.table(user.history)
 
+    // user Loans
+    const loans = user.loans.slice()
+    for (const loan of loans) {
+        user.history.push(`${today()}   Pay for ${loan.amount} loan  - ${user.balance * .1}`)
+        loan.pay += user.balance * .1
+        let msg = `You pay ${user.balance * .1} MAD for the ${loan.amount} MAD`
+        user.balance *= .9
+
+        if (loan.pay >= loan.amount) {
+            // remove the loan
+            user.loans.splice(user.loans.indexOf(loan), 1)
+            msg += `\nthe payment for the ${loan.amount} loan completed!`
+            user.history.push(`${today()}   Complete ${loan.amount} loan`)
+        }
+        alert(msg)
+    }
+
+    // user Investment
+    const invests = user.invests.slice()
+    for (const invest of invests) {
+        user.history.push(`${today()}   Profit + ${invest.amount * .2} MAD from ${invest.amount} MAD invest`)
+        invest.profit += invest.amount * .2
+        let msg = `You gain ${invest.amount * .2} MAD from the ${invest.amount} MAD invest`
+        user.balance += invest.amount * .2
+
+        if (invest.profit >= invest.amount * 1.2) {
+            // remove the invest
+            user.invests.splice(user.invests.indexOf(invest), 1)
+            msg += `\nthe ${invest.amount} invest ended!`
+            user.history.push(`${today()}   End ${invest.amount} invest  + ${invest.profit} MAD profit`)
+        }
+        alert(msg)
+    }
+
     function service() {
         // Withdraw Money
         function withdraw() {
-            const userInput = prompt('Enter the amount to draw.')
+            const userInput = prompt('Enter the amount to withdraw.')
             const amount = Number(userInput)
 
             if (!amount) {
@@ -270,17 +324,18 @@ function login() {
             }
 
             if (amount > user.balance) {
-                alert(`invalid amount of money '${amount}'\nYou have only ${user.balance}`)
+                alert(`invalid amount of money '${amount} MAD'\nYou have only ${user.balance} MAD`)
                 return withdraw()
             }
 
             user.balance -= amount
+            user.history.push(`${today()}   Withdraw  - ${amount} MAD`)
             return service()
         }
 
         // Deposit Money
         function deposit() {
-            const userInput = prompt('Enter the amount to draw.')
+            const userInput = prompt('Enter the amount to deposit.')
             const amount = Number(userInput)
 
             if (!amount) {
@@ -289,15 +344,50 @@ function login() {
             }
 
             if (amount > 1_000) {
-                alert(`you can only deposit `)
+                alert(`you can only deposit 1000 MAD`)
                 return deposit()
             }
 
-            user.balance -= amount
+            user.balance += amount
+            user.history.push(`${today()}   Deposit  + ${amount} MAD`)
             return service()
         }
 
-        const userInput = prompt(`Current Balance: ${user.balance}\nwanna 'logout', 'withdraw', 'deposit', 'loan', 'invest' or 'history'`, 'withdraw')
+        // Take a Loan
+        function loan() {
+            user.history.push(`${today()}   Take a Loan  + ${user.balance * .2} MAD`)
+            alert(`You take a loan of ${user.balance * .2} MAD`)
+            new Loan(user, user.balance * .2)
+            user.balance *= 1.2
+            return service()
+        }
+
+        // Invest:
+        // - If the user chooses this option, they can invest any amount in the bank.
+        function invest() {
+            const userInput = prompt('Enter the amount to invest.')
+            const amount = Number(userInput)
+
+            if (!amount) {
+                alert(`invalid amount of money '${userInput}'`)
+                return invest()
+            }
+
+            if (amount > user.balance) {
+                alert(`you can't invest ${amount}!\nYou have only ${user.balance}`)
+                return invest()
+            }
+
+            user.history.push(`${today()}   Invest  ${amount} MAD`)
+            alert(`You invest ${amount} MAD`)
+            new Investment(user, amount)
+            user.balance -= amount
+            return service()
+        }
+        // - Upon the next login, they will receive 20% of their investment each time until reaching 120% (earning 20% on each investment).
+
+        const userInput = prompt(`Current Balance: ${user.balance}\nwanna 'logout', 'withdraw', 'deposit', 'loan', 'invest' or 'history'`, 'logout')
+        console.table(user.history)
         switch (userInput) {
             case 'logout':
                 user.history.push(`${today()}   Logout`)
@@ -306,30 +396,103 @@ function login() {
                 withdraw()
                 break
             case 'deposit':
-
+                deposit()
                 break
             case 'loan':
-
+                loan()
                 break
             case 'invest':
-
+                invest()
                 break
             case 'history':
-
-                break
-
+                alert(user.history.join('\n'))
+                return service()
             default:
                 alert(`invalid option '${userInput}'!`)
                 return service()
         }
-
     }
 
-    service()
+    service(user)
+}
+
+function reset_password() {
+    // # Email:
+    function get_user() {
+        const email = prompt('Enter your email.')
+        // search email in Bank
+        for (const user of Bank.users) {
+            if (email == user.email) {
+                return user
+            }
+        }
+        alert(`${email} not found!`)
+        return get_user()
+    }
+
+    // - Check if the email exists in our Database.
+    const user = get_user()
+
+    // # Password:
+    function get_password() {
+        let password = prompt('Enter a new password.')
+
+        // - Do not save empty password
+        if (!password) {
+            alert('your password is empty')
+            return get_password()
+        }
+
+        // - delete spaces at the begining and the end.
+        password = password.trim()
+
+        // - Do not save the Password if it has spaces in the middle.
+        if (password.includes(' ')) {
+            alert('the password should not contain spaces!')
+            return get_password()
+        }
+
+        // - Require at least one special character from the set: ["@", "#", "-", "+", "*", "/"].
+        let containSpecial = false
+        for (const special of Char.specials) {
+            if (password.includes(special)) {
+                console.log('special: ', special)
+                containSpecial = true
+            }
+        }
+        if (!containSpecial) {
+            alert('the password must contain at least one special character!')
+            return get_password()
+        }
+
+        // - Require at least 7 characters to confirm the password.
+        if (password.length < 7) {
+            alert('the password must contain at least 7 characters!')
+            return get_password()
+        }
+
+        return password
+    }
+    const newPassword = get_password()
+
+    // Confirm Password
+    let ConfirmPassword
+    while (true) {
+        ConfirmPassword = prompt('Confirm your new password')
+        if (ConfirmPassword == newPassword) {
+            break
+        }
+        alert('invalid password!')
+    }
+
+    user.password = newPassword
+    console.table(Bank.users)
+    user.history.push(`${today()}  Reset password`)
+    alert('password reseted successfully!')
 }
 
 function main() {
-    let userInput = prompt("wanna 'signup', 'login' or 'reset password'")
+    let userInput = prompt("wanna 'signup', 'login' or 'reset password'", 'login')
 
     switch (userInput) {
         case 'login':
@@ -337,18 +500,16 @@ function main() {
             break
         case 'signup':
             signup()
-            break
+            return main()
         case 'resetpassword':
-
-            break;
-
+            reset_password()
+            return main()
         default:
             alert(`invalid option '${userInput}'!`)
-            main()
-            break;
+            return main()
     }
 }
 
-new User("Ilyass Elyatime", "ie0@gmail.com", 19, "azerty@", 7350)
+new User("Ilyass Elyatime", "ie0@gmail.com", 19, "012345@", 7350)
 console.table(Bank.users)
 main()

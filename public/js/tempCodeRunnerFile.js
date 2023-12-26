@@ -1,4 +1,1 @@
-number = Number('2h2')
-if (number) {
-    console.log(number)
-}
+console.log(7350 * 1.2)
