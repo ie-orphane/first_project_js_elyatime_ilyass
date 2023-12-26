@@ -77,11 +77,3 @@
             
             # History:
             - Ability to view the entire transaction history.
-
-echo "# first_project_js_elyatime_ilyass" >> README.md
-git init
-git add README.md
-git commit -m "[init] first commit"
-git branch -M main
-git remote add origin https://github.com/ie-orphane/first_project_js_elyatime_ilyass.git
-git push -u origin main# first_project_js_elyatime_ilyass
